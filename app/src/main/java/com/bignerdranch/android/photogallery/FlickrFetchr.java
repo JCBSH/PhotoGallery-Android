@@ -28,10 +28,6 @@ public class FlickrFetchr {
     private static final String PARAM_PAGES = "page";
 
     private static final String XML_PHOTO = "photo";
-    private int mPage = 1;
-    public FlickrFetchr() {
-        mPage = 1;
-    }
 
     byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
@@ -65,7 +61,6 @@ public class FlickrFetchr {
                     .appendQueryParameter("method", METHOD_GET_RECENT)
                     .appendQueryParameter("api_key", API_KEY)
                     .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
-                    .appendQueryParameter(PARAM_PAGES, String.valueOf(mPage))
                     .build().toString();
             //Log.i(TAG, url);
             String xmlString = getUrl(url);
@@ -74,12 +69,37 @@ public class FlickrFetchr {
             XmlPullParser parser = factory.newPullParser();
             parser.setInput(new StringReader(xmlString));
             parseItems(items, parser);
-            mPage++;
 
         } catch (IOException ioe) {
             Log.e(TAG, "Failed to fetch items", ioe);
         } catch (XmlPullParserException xppe) {
-        Log.e(TAG, "Failed to parse items", xppe);
+            Log.e(TAG, "Failed to parse items", xppe);
+        }
+        return items;
+    }
+
+    public ArrayList<GalleryItem> fetchItemsByPage(Integer pageNumber) {
+
+        ArrayList<GalleryItem> items = new ArrayList<GalleryItem>();
+        try {
+            String url = Uri.parse(ENDPOINT).buildUpon()
+                    .appendQueryParameter("method", METHOD_GET_RECENT)
+                    .appendQueryParameter("api_key", API_KEY)
+                    .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
+                    .appendQueryParameter(PARAM_PAGES, String.valueOf(pageNumber))
+                    .build().toString();
+            //Log.i(TAG, url);
+            String xmlString = getUrl(url);
+            //Log.i(TAG, "Received xml: " + xmlString);
+            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+            XmlPullParser parser = factory.newPullParser();
+            parser.setInput(new StringReader(xmlString));
+            parseItems(items, parser);
+
+        } catch (IOException ioe) {
+            Log.e(TAG, "Failed to fetch items", ioe);
+        } catch (XmlPullParserException xppe) {
+            Log.e(TAG, "Failed to parse items", xppe);
         }
         return items;
     }
