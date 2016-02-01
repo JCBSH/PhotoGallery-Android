@@ -19,14 +19,17 @@ public class PhotoGalleryFragment extends Fragment{
 
     private static final String TAG = "PhotoGalleryFragment";
 
-    GridView mGridView;
+    private GridView mGridView;
     private View mProgressContainer;
-    ArrayList<GalleryItem> mItems;
+    private ArrayList<GalleryItem> mItems;
+    private FlickrFetchr mFetchr;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
+        mItems = new ArrayList<GalleryItem>();
+        mFetchr =  new FlickrFetchr();
         new FetchItemsTask().execute();
     }
 
@@ -37,30 +40,36 @@ public class PhotoGalleryFragment extends Fragment{
         mGridView = (GridView) v.findViewById(R.id.gridView);
         mProgressContainer = v.findViewById(R.id.progressContainer);
         mProgressContainer.setVisibility(View.INVISIBLE);
+
         setupAdapter();
         return v;
     }
 
     private void setupAdapter() {
         if (getActivity() == null || mGridView == null) return;
-        if (mItems != null) {
-            mGridView.setAdapter(new ArrayAdapter<GalleryItem>(getActivity(),
-                    android.R.layout.simple_gallery_item, mItems));
+//        if(mItems != null) {
+//            mGridView.setAdapter(new GalleryItemAdapter(mItems));
+//        } else {
+//            mGridView.setAdapter(null);
+//        }
+        if (mGridView.getAdapter() == null) {
+            mGridView.setAdapter(new GalleryItemAdapter(mItems));
         } else {
-            mGridView.setAdapter(null);
+            ((GalleryItemAdapter) mGridView.getAdapter()).notifyDataSetChanged();
         }
+
     }
 
     private class FetchItemsTask extends AsyncTask<Void,Void,ArrayList<GalleryItem>> {
         @Override
         protected ArrayList<GalleryItem> doInBackground(Void... params) {
             publishProgress();
-            return new FlickrFetchr().fetchItems();
+            return mFetchr.fetchItems();
         }
 
         @Override
         protected void onPostExecute(ArrayList<GalleryItem> items) {
-            mItems = items;
+            mItems.addAll(items);
             setupAdapter();
             mProgressContainer.setVisibility(View.INVISIBLE);
         }
@@ -72,4 +81,20 @@ public class PhotoGalleryFragment extends Fragment{
         }
     }
 
+    private class GalleryItemAdapter extends ArrayAdapter<GalleryItem> {
+
+        public GalleryItemAdapter(ArrayList<GalleryItem> items) {
+            super(getActivity(), android.R.layout.simple_gallery_item, items);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            //Log.d(TAG, String.valueOf(position));
+            if (position == getCount() - 1) {
+                //Log.d(TAG, "!!!!!!!");
+                new FetchItemsTask().execute();
+            }
+            return super.getView(position, convertView, parent);
+        }
+    }
 }

@@ -25,8 +25,13 @@ public class FlickrFetchr {
     private static final String METHOD_GET_RECENT = "flickr.photos.getRecent";
     private static final String PARAM_EXTRAS = "extras";
     private static final String EXTRA_SMALL_URL = "url_s";
+    private static final String PARAM_PAGES = "page";
 
     private static final String XML_PHOTO = "photo";
+    private int mPage = 1;
+    public FlickrFetchr() {
+        mPage = 1;
+    }
 
     byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
@@ -53,20 +58,23 @@ public class FlickrFetchr {
     }
 
     public ArrayList<GalleryItem> fetchItems() {
+
         ArrayList<GalleryItem> items = new ArrayList<GalleryItem>();
         try {
             String url = Uri.parse(ENDPOINT).buildUpon()
                     .appendQueryParameter("method", METHOD_GET_RECENT)
                     .appendQueryParameter("api_key", API_KEY)
                     .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
+                    .appendQueryParameter(PARAM_PAGES, String.valueOf(mPage))
                     .build().toString();
-            Log.i(TAG, url);
+            //Log.i(TAG, url);
             String xmlString = getUrl(url);
-            Log.i(TAG, "Received xml: " + xmlString);
+            //Log.i(TAG, "Received xml: " + xmlString);
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
             XmlPullParser parser = factory.newPullParser();
             parser.setInput(new StringReader(xmlString));
             parseItems(items, parser);
+            mPage++;
 
         } catch (IOException ioe) {
             Log.e(TAG, "Failed to fetch items", ioe);
@@ -78,10 +86,16 @@ public class FlickrFetchr {
 
     void parseItems(ArrayList<GalleryItem> items, XmlPullParser parser)
             throws XmlPullParserException, IOException {
+
         int eventType = parser.next();
+        //int c = 0;
+        //Log.d(TAG, "page: " + String.valueOf(mPage));
         while (eventType != XmlPullParser.END_DOCUMENT) {
+
             if (eventType == XmlPullParser.START_TAG &&
                     XML_PHOTO.equals(parser.getName())) {
+                //Log.d(TAG, String.valueOf(c));
+                //c++;
                 String id = parser.getAttributeValue(null, "id");
                 String caption = parser.getAttributeValue(null, "title");
                 String smallUrl = parser.getAttributeValue(null, EXTRA_SMALL_URL);
