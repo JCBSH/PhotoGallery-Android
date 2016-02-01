@@ -1,6 +1,7 @@
 package com.bignerdranch.android.photogallery;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -21,6 +22,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
     private static final String TAG = "ThumbnailDownloader";
     private static final int MESSAGE_DOWNLOAD = 0;
     private static final int MESSAGE_PRELOAD = 1;
+    private Context mContext;
     private Handler mHandler;
 
     private Map<Token, String> requestMap =
@@ -34,7 +36,6 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
 
     public interface Liistener<Token> {
         void onThumbnailDownloaded(Token token, Bitmap thumbnail, String url);
-        void onThumbnailPreloaded(Bitmap thumbnail, String url);
     }
     public void setListener(Liistener<Token> listener) {
         mListener = listener;
@@ -43,6 +44,12 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
     public ThumbnailDownloader(Handler responseHandler) {
         super(TAG);
         mResponseHandler = responseHandler;
+    }
+
+    public ThumbnailDownloader(Handler responseHandler, Context context) {
+        super(TAG);
+        mResponseHandler = responseHandler;
+        mContext = context;
     }
 
     @SuppressLint("HandlerLeak")
@@ -89,8 +96,8 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
             if (url == null)
                 return;
             byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
-            final Bitmap bitmap = BitmapFactory
-                    .decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+            final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+            MyBitMapCache.get(mContext).addBitmapToMemoryCache(url, bitmap);
             Log.i(TAG, "Bitmap created");
             mResponseHandler.post(new Runnable() {
                 public void run() {
@@ -107,18 +114,15 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
 
     private void handlePreloadRequest(final String url) {
         try {
-            if (url == null || !mRequestPreloadQueue.contains(url))
+            MyBitMapCache cache = MyBitMapCache.get(mContext);
+            if (url == null || !mRequestPreloadQueue.contains(url) || cache.getBitmapFromMemCache(url) != null)
                 return;
             byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
-            final Bitmap bitmap = BitmapFactory
-                    .decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
-            Log.i(TAG, "Bitmap created");
-            mResponseHandler.post(new Runnable() {
-                public void run() {
-                    mRequestPreloadQueue.remove(url);
-                    mListener.onThumbnailPreloaded(bitmap, url);
-                }
-            });
+            final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+
+            Log.i(TAG, "Bitmap created fro preload");
+            mRequestPreloadQueue.remove(url);
+            cache.addBitmapToMemoryCache(url, bitmap);
         } catch (IOException ioe) {
             Log.e(TAG, "Error downloading image", ioe);
         }

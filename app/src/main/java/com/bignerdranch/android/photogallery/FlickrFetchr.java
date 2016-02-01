@@ -91,7 +91,7 @@ public class FlickrFetchr {
             //Log.i(TAG, url);
             String xmlString = getUrl(url);
             //Log.i(TAG, "Received xml: " + xmlString);
-            Log.d(TAG, " current page: " + pageNumber);
+            //Log.d(TAG, " current page: " + pageNumber);
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
             XmlPullParser parser = factory.newPullParser();
             parser.setInput(new StringReader(xmlString));
