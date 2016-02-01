@@ -9,6 +9,7 @@ import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,18 +20,21 @@ import java.util.Map;
 public class ThumbnailDownloader<Token> extends HandlerThread{
     private static final String TAG = "ThumbnailDownloader";
     private static final int MESSAGE_DOWNLOAD = 0;
-    Handler mHandler;
+    private static final int MESSAGE_PRELOAD = 1;
+    private Handler mHandler;
 
-    Map<Token, String> requestMap =
+    private Map<Token, String> requestMap =
             Collections.synchronizedMap(new HashMap<Token, String>());
+    private ArrayList<String> mRequestPreloadQueue = new ArrayList<String>();
 
-    Handler mResponseHandler;
-    Liistener<Token> mListener;
+    private Handler mResponseHandler;
+    private Liistener<Token> mListener;
 
 
 
     public interface Liistener<Token> {
         void onThumbnailDownloaded(Token token, Bitmap thumbnail, String url);
+        void onThumbnailPreloaded(Bitmap thumbnail, String url);
     }
     public void setListener(Liistener<Token> listener) {
         mListener = listener;
@@ -53,17 +57,25 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
                     Log.i(TAG, "Got a request for url: " + requestMap.get(token));
                     handleRequest(token);
                 }
+                if(msg.what == MESSAGE_PRELOAD) {
+                    handlePreloadRequest((String) msg.obj);
+                }
             }
         };
     }
 
     public void queueThumbnail(Token token, String url) {
-        mHandler.obtainMessage(MESSAGE_DOWNLOAD, token).sendToTarget();
+        mHandler.sendMessageAtFrontOfQueue(mHandler.obtainMessage(MESSAGE_DOWNLOAD, token));
         requestMap.put(token, url);
         Log.i(TAG, "Got an URL: " + url);
     }
 
     public void queuePreloadThumbnail(String url) {
+
+        if (!mRequestPreloadQueue.contains(url)) {
+            mRequestPreloadQueue.add(url);
+            mHandler.obtainMessage(MESSAGE_PRELOAD, url).sendToTarget();
+        }
     }
 
 
@@ -93,8 +105,28 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
         }
     }
 
+    private void handlePreloadRequest(final String url) {
+        try {
+            if (url == null || !mRequestPreloadQueue.contains(url))
+                return;
+            byte[] bitmapBytes = new FlickrFetchr().getUrlBytes(url);
+            final Bitmap bitmap = BitmapFactory
+                    .decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+            Log.i(TAG, "Bitmap created");
+            mResponseHandler.post(new Runnable() {
+                public void run() {
+                    mRequestPreloadQueue.remove(url);
+                    mListener.onThumbnailPreloaded(bitmap, url);
+                }
+            });
+        } catch (IOException ioe) {
+            Log.e(TAG, "Error downloading image", ioe);
+        }
+    }
+
     public void clearQueue() {
         mHandler.removeMessages(MESSAGE_DOWNLOAD);
+        mHandler.removeMessages(MESSAGE_PRELOAD);
         requestMap.clear();
     }
 

@@ -30,7 +30,7 @@ public class PhotoGalleryFragment extends Fragment{
     private View mProgressContainer;
     private ArrayList<GalleryItem> mItems;
     private ThumbnailDownloader<ImageView> mThumbnailThread;
-    private static final int PRELOAD_SIZE = 20;
+    private static final int PRELOAD_SIZE = 25;
 
     private int mNextPage = 1;
     private LruCache<String, Bitmap> mPhotoCache;
@@ -48,6 +48,11 @@ public class PhotoGalleryFragment extends Fragment{
                 if (isVisible()) {
                     imageView.setImageBitmap(thumbnail);
                 }
+            }
+
+            @Override
+            public void onThumbnailPreloaded(Bitmap thumbnail, String url) {
+                addBitmapToMemoryCache(url,thumbnail);
             }
         });
 
@@ -98,14 +103,15 @@ public class PhotoGalleryFragment extends Fragment{
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
                 if(firstVisibleItem + visibleItemCount == totalItemCount && totalItemCount > 0) {
-                    new FetchItemsTask().execute(mNextPage);
                     mNextPage++;
+                    new FetchItemsTask().execute(mNextPage);
+
                 }
                 Log.d(TAG, "Scrolled: totalItemCount: " + totalItemCount + " firstVisibleItem: "
                         + firstVisibleItem + " visibleItemCount: " + visibleItemCount);
                 if (firstVisibleItem >= PRELOAD_SIZE) {
                     for (int j = firstVisibleItem, i = 0; i < PRELOAD_SIZE; j--, i++) {
-                        if (mItems.get(j).getUrl() != null) {
+                        if (mItems.get(j).getUrl() != null && getBitmapFromMemCache(mItems.get(j).getUrl()) == null) {
                             mThumbnailThread.queuePreloadThumbnail(mItems.get(j).getUrl());
                         }
                     }
@@ -113,7 +119,7 @@ public class PhotoGalleryFragment extends Fragment{
                 int lastVisibleItem = (firstVisibleItem + visibleItemCount);
                 if (totalItemCount - lastVisibleItem >= PRELOAD_SIZE) {
                     for (int j = lastVisibleItem, i = 0; i < PRELOAD_SIZE; j++, i++) {
-                        if (mItems.get(j).getUrl() != null) {
+                        if (mItems.get(j).getUrl() != null && getBitmapFromMemCache(mItems.get(j).getUrl()) == null) {
                             mThumbnailThread.queuePreloadThumbnail(mItems.get(j).getUrl());
                         }
                     }
@@ -198,10 +204,11 @@ public class PhotoGalleryFragment extends Fragment{
             if (getItem(position).getUrl() == null) {
                 return convertView;
             }
+            Log.d("!!!!!", position + ": " + getItem(position).getUrl());
             if (getBitmapFromMemCache(getItem(position).getUrl()) != null) {
                 if(isVisible()) {
                     imageView.setImageBitmap(getBitmapFromMemCache(getItem(position).getUrl()));
-                    Log.d("!!!!!", position + ": " + getItem(position).getUrl());
+                    //Log.d("!!!!!", position + ": " + getItem(position).getUrl());
                     mThumbnailThread.removeFromQueue(imageView);
                 }
             } else {
