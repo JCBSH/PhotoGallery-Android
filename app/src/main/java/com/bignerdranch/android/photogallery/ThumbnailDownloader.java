@@ -26,8 +26,11 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
 
     Handler mResponseHandler;
     Liistener<Token> mListener;
+
+
+
     public interface Liistener<Token> {
-        void onThumbnailDownloaded(Token token, Bitmap thumbnail);
+        void onThumbnailDownloaded(Token token, Bitmap thumbnail, String url);
     }
     public void setListener(Liistener<Token> listener) {
         mListener = listener;
@@ -60,6 +63,14 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
         Log.i(TAG, "Got an URL: " + url);
     }
 
+    public void queuePreloadThumbnail(String url) {
+    }
+
+
+    public void removeFromQueue(Token imageView) {
+        requestMap.remove(imageView);
+    }
+
     private void handleRequest(final Token token) {
         try {
             final String url = requestMap.get(token);
@@ -74,7 +85,7 @@ public class ThumbnailDownloader<Token> extends HandlerThread{
                     if (requestMap.get(token) != url)
                         return;
                     requestMap.remove(token);
-                    mListener.onThumbnailDownloaded(token, bitmap);
+                    mListener.onThumbnailDownloaded(token, bitmap, url);
                 }
             });
         } catch (IOException ioe) {
