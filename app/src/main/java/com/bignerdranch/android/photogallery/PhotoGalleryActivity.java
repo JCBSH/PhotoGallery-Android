@@ -33,7 +33,7 @@ public class PhotoGalleryActivity extends SingleFragmentActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         String query = getIntent().getStringExtra(SearchManager.QUERY);
-        Log.i(TAG, "Received a new search query: " + query);
+        //Log.i(TAG, "Received a new search query: " + query);
 
         PreferenceManager.getDefaultSharedPreferences(this)
                 .edit()
