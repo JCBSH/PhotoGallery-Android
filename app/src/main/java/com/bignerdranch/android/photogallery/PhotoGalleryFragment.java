@@ -28,6 +28,7 @@ import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -99,9 +100,9 @@ public class PhotoGalleryFragment extends Fragment{
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
                 if(firstVisibleItem + visibleItemCount == totalItemCount && totalItemCount > 0 && mCurrentPage == mFetchedPage) {
-
-                    updateItems();
                     mCurrentPage++;
+                    updateItems();
+
 
                 }
 //                Log.d(TAG, "Scrolled: totalItemCount: " + totalItemCount + " firstVisibleItem: "
@@ -148,6 +149,19 @@ public class PhotoGalleryFragment extends Fragment{
 
             searchView.setSearchableInfo(searchInfo);
 
+            searchView.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View v, boolean hasFocus) {
+                    if (hasFocus) {
+                        String query = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                                .getString(FlickrFetchr.PREF_SEARCH_QUERY, null);
+                        ((SearchView) v).setQuery(query, false);
+                    }
+                }
+            });
+            searchView.setSubmitButtonEnabled(true);
+            //searchView.setIconifiedByDefault(false);
+
        }
         //searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
 //                @Override
@@ -170,13 +184,18 @@ public class PhotoGalleryFragment extends Fragment{
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_item_search:
-                getActivity().onSearchRequested();
+                String query = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                        .getString(FlickrFetchr.PREF_SEARCH_QUERY, null);
+                getActivity().startSearch(query,true,null,false);
+
                 return true;
             case R.id.menu_item_clear:
                 PreferenceManager.getDefaultSharedPreferences(getActivity())
                         .edit()
                         .putString(FlickrFetchr.PREF_SEARCH_QUERY, null)
                         .commit();
+
+                mItems.clear();
                 updateItems();
                 return true;
             default:
@@ -209,7 +228,7 @@ public class PhotoGalleryFragment extends Fragment{
             Log.i(TAG, "Received a new search query: " + query);
             if (query != null) {
                 Log.i(TAG, "Received a new search query: searching " + query);
-                return new FlickrFetchr().search(query);
+                return new FlickrFetchr().searchByPage(query, params[0]);
             } else {
                 Log.i(TAG, "Received a new search query: not searching " + query);
                 return new FlickrFetchr().fetchItemsByPage(params[0]);
@@ -219,6 +238,10 @@ public class PhotoGalleryFragment extends Fragment{
         @Override
         protected void onPostExecute(ArrayList<GalleryItem> items) {
             mItems.addAll(items);
+            String query = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                    .getString(FlickrFetchr.PREF_SEARCH_QUERY, null);
+            if (query != null)
+                Toast.makeText(getActivity(), mItems.size() + " result of " + query +" found", Toast.LENGTH_SHORT).show();
             //Log.d(TAG, "total item count: " + mItems.size() + " current page: " + mCurrentPage);
 
             setupAdapter();
