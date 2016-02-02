@@ -35,7 +35,7 @@ import java.util.ArrayList;
  * Created by JCBSH on 1/02/2016.
  */
 public class PhotoGalleryFragment extends Fragment{
-    public static final String LIFE_TAG = "life_PhotoGalleryFragment";
+    public static final String LIFE_TAG = "life_GalleryFragment";
     private static final String TAG = "PhotoGalleryFragment";
 
     private GridView mGridView;
@@ -147,7 +147,7 @@ public class PhotoGalleryFragment extends Fragment{
             SearchableInfo searchInfo = searchManager.getSearchableInfo(name);
 
             searchView.setSearchableInfo(searchInfo);
-//
+
        }
         //searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
 //                @Override
@@ -206,9 +206,12 @@ public class PhotoGalleryFragment extends Fragment{
                 return new ArrayList<GalleryItem>();
             String query = PreferenceManager.getDefaultSharedPreferences(activity)
                     .getString(FlickrFetchr.PREF_SEARCH_QUERY, null);
+            Log.i(TAG, "Received a new search query: " + query);
             if (query != null) {
+                Log.i(TAG, "Received a new search query: searching " + query);
                 return new FlickrFetchr().search(query);
             } else {
+                Log.i(TAG, "Received a new search query: not searching " + query);
                 return new FlickrFetchr().fetchItemsByPage(params[0]);
             }
         }
@@ -279,8 +282,8 @@ public class PhotoGalleryFragment extends Fragment{
     }
 
     public void updateItems() {
-        Log.d(TAG, "Updating question text for question #",
-                new Exception());
+//        Log.d(TAG, "Updating question text for question #",
+//                new Exception());
         new FetchItemsTask().execute(mCurrentPage);
     }
 

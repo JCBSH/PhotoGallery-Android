@@ -56,27 +56,7 @@ public class FlickrFetchr {
         return new String(getUrlBytes(urlSpec));
     }
 
-    public ArrayList<GalleryItem> downloadGalleryItems(String url) {
-
-        ArrayList<GalleryItem> items = new ArrayList<GalleryItem>();
-        try {
-            String xmlString = getUrl(url);
-            Log.i(TAG, "Received xml: " + xmlString);
-            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
-            XmlPullParser parser = factory.newPullParser();
-            parser.setInput(new StringReader(xmlString));
-            parseItems(items, parser);
-
-        } catch (IOException ioe) {
-            Log.e(TAG, "Failed to fetch items", ioe);
-        } catch (XmlPullParserException xppe) {
-            Log.e(TAG, "Failed to parse items", xppe);
-        }
-        return items;
-    }
-
     public ArrayList<GalleryItem> fetchItems() {
-        // Move code here from above
         String url = Uri.parse(ENDPOINT).buildUpon()
                 .appendQueryParameter("method", METHOD_GET_RECENT)
                 .appendQueryParameter("api_key", API_KEY)
@@ -85,10 +65,28 @@ public class FlickrFetchr {
         return downloadGalleryItems(url);
     }
 
+    public ArrayList<GalleryItem> downloadGalleryItems(String  url) {
+        ArrayList<GalleryItem> items = new ArrayList<GalleryItem>();
+
+        try {
+            String xmlString = getUrl(url);
+            Log.i(TAG, "Received xml: " + xmlString);
+            XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+            XmlPullParser parser = factory.newPullParser();
+            parser.setInput(new StringReader(xmlString));
+
+            parseItems(items, parser);
+        } catch (IOException ioe) {
+            Log.e(TAG, "Failed to fetch items", ioe);
+        } catch (XmlPullParserException xppe) {
+            Log.e(TAG, "Failed to parse items", xppe);
+        }
+        return items;
+    }
+
     public ArrayList<GalleryItem> search(String query) {
-        // Move code here from above
         String url = Uri.parse(ENDPOINT).buildUpon()
-                .appendQueryParameter("method", METHOD_GET_RECENT)
+                .appendQueryParameter("method", METHOD_SEARCH)
                 .appendQueryParameter("api_key", API_KEY)
                 .appendQueryParameter(PARAM_EXTRAS, EXTRA_SMALL_URL)
                 .appendQueryParameter(PARAM_TEXT, query)
