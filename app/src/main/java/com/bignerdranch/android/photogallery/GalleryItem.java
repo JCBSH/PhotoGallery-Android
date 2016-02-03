@@ -4,13 +4,13 @@ package com.bignerdranch.android.photogallery;
  * Created by JCBSH on 1/02/2016.
  */
 public class GalleryItem {
-    private String mOwner;
     private String mSecret;
     private int mServer;
 
     private String mCaption;
     private String mId;
     private String mUrl;
+    private String mOwner;
     public String toString() {
         return mCaption;
     }
@@ -37,5 +37,17 @@ public class GalleryItem {
 
     public void setUrl(String url) {
         mUrl = url;
+    }
+
+    public String getOwner() {
+        return mOwner;
+    }
+
+    public void setOwner(String owner) {
+        mOwner = owner;
+    }
+
+    public String getPhotoPageUrl() {
+        return "http://www.flickr.com/photos/" + mOwner + "/" + mId;
     }
 }

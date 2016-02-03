@@ -6,15 +6,16 @@ import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.SearchView;
 import android.util.Log;
@@ -25,6 +26,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -36,7 +38,7 @@ import java.util.ArrayList;
 /**
  * Created by JCBSH on 1/02/2016.
  */
-public class PhotoGalleryFragment extends Fragment{
+public class PhotoGalleryFragment extends VisibleFragment{
     public static final String LIFE_TAG = "life_GalleryFragment";
     private static final String TAG = "PhotoGalleryFragment";
 
@@ -129,6 +131,19 @@ public class PhotoGalleryFragment extends Fragment{
 
 
         setupAdapter();
+
+        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> gridView, View view, int pos,
+                                    long id) {
+                GalleryItem item = mItems.get(pos);
+                Uri photoPageUri = Uri.parse(item.getPhotoPageUrl());
+                Intent i = new Intent(getActivity(), PhotoPageActivity.class);
+                i.setData(photoPageUri);
+                startActivity(i);
+            }
+        });
+
         return v;
     }
 
